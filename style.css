@@ -550,91 +550,146 @@ input {
     margin-left: 5px;
 }
 
-/* Mobile controls */
-.mobile-controls {
+/* Mobile UI Styles */
+.mobile-ui {
+    display: none; /* Hidden by default, shown only on mobile */
     position: fixed;
-    top: 20px;
-    right: 20px;
-    z-index: 1000;
-    display: none;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none; /* Allow touches to pass through to canvas */
+    z-index: 100;
 }
 
+/* Show mobile UI only on mobile devices */
 @media (max-width: 768px) {
-    .mobile-controls {
+    .mobile-ui {
         display: block;
     }
-    
+}
+
+.mobile-joystick {
+    position: absolute;
+    bottom: 100px;
+    left: 100px;
+    width: 100px;
+    height: 100px;
+    border-radius: 50%;
+    background-color: rgba(255, 255, 255, 0.2);
+    border: 2px solid rgba(255, 255, 255, 0.5);
+    pointer-events: none; /* Allow touches to pass through to canvas */
+}
+
+.mobile-button {
+    position: absolute;
+    width: 80px;
+    height: 80px;
+    border-radius: 50%;
+    background-color: rgba(255, 255, 255, 0.2);
+    border: 2px solid rgba(255, 255, 255, 0.5);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    color: white;
+    font-weight: bold;
+    pointer-events: none; /* Allow touches to pass through to canvas */
+}
+
+.shoot-button {
+    bottom: 100px;
+    right: 100px;
+    background-color: rgba(255, 0, 0, 0.2);
+    border-color: rgba(255, 0, 0, 0.5);
+}
+
+.build-button {
+    bottom: 200px;
+    right: 100px;
+    background-color: rgba(0, 255, 0, 0.2);
+    border-color: rgba(0, 255, 0, 0.5);
+}
+
+.mobile-weapon-container {
+    position: absolute;
+    top: 100px;
+    right: 100px;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+    pointer-events: none; /* Allow touches to pass through to canvas */
+}
+
+.weapon-button {
+    width: 60px;
+    height: 60px;
+    background-color: rgba(255, 255, 0, 0.2);
+    border-color: rgba(255, 255, 0, 0.5);
+}
+
+.mobile-item-container {
+    position: absolute;
+    bottom: 300px;
+    right: 100px;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+    pointer-events: none; /* Allow touches to pass through to canvas */
+}
+
+.item-button {
+    width: 60px;
+    height: 60px;
+    background-color: rgba(0, 0, 255, 0.2);
+    border-color: rgba(0, 0, 255, 0.5);
+}
+
+.pause-button {
+    top: 20px;
+    right: 20px;
+    width: 50px;
+    height: 50px;
+    background-color: rgba(255, 255, 255, 0.2);
+    border-color: rgba(255, 255, 255, 0.5);
+}
+
+/* Adjust HUD for mobile */
+@media (max-width: 768px) {
     .hud {
-        bottom: 10px;
-        left: 50%;
-        transform: translateX(-50%);
-        padding: 5px;
-        font-size: 12px;
-    }
-    
-    .health-bar, .shield-bar {
-        height: 8px;
-    }
-    
-    .weapon-slots, .materials, .ammo, .items {
-        margin-top: 5px;
-    }
-    
-    .weapon-slot, .material, .ammo-type, .item {
-        padding: 3px 6px;
-        font-size: 12px;
-    }
-    
-    .notification {
-        font-size: 14px;
-        padding: 5px 10px;
-    }
-    
-    .game-over, .pause-menu {
-        width: 80%;
+        width: 90%;
+        max-width: 400px;
         padding: 15px;
     }
     
-    .game-over h1, .pause-menu h1 {
-        font-size: 24px;
-    }
-    
-    .game-over h2, .pause-menu h2 {
-        font-size: 18px;
-    }
-    
-    .button-container {
-        flex-direction: column;
-        gap: 10px;
-    }
-    
-    .button {
+    .health-bar, .shield-bar {
         width: 100%;
-        padding: 10px;
     }
-}
-
-.weapon-switcher {
-    display: flex;
-    gap: 5px;
-    background-color: rgba(0, 0, 0, 0.5);
-    padding: 5px;
-    border-radius: 5px;
-}
-
-.weapon-switcher .weapon-slot {
-    width: 30px;
-    height: 30px;
-    background-color: rgba(255, 255, 255, 0.2);
-    color: white;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    border-radius: 5px;
-    cursor: pointer;
-}
-
-.weapon-switcher .weapon-slot.active {
-    background-color: rgba(255, 255, 255, 0.5);
-    font-weight: bold;
+    
+    .weapon-slots {
+        flex-wrap: wrap;
+        justify-content: center;
+    }
+    
+    .weapon-slot {
+        width: 50px;
+        height: 50px;
+        font-size: 12px;
+    }
+    
+    .materials, .ammo {
+        flex-wrap: wrap;
+        justify-content: center;
+    }
+    
+    .material, .ammo-type {
+        font-size: 14px;
+    }
+    
+    .items {
+        margin-top: 5px;
+    }
+    
+    .item {
+        font-size: 12px;
+    }
 } 

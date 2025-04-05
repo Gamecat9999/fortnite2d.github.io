@@ -10,6 +10,41 @@ class Game {
         this.width = this.canvas.width;
         this.height = this.canvas.height;
 
+        // Detect if device is mobile
+        this.isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+        
+        // Initialize touch controls for mobile
+        this.touchControls = {
+            joystick: {
+                active: false,
+                x: 0,
+                y: 0,
+                startX: 0,
+                startY: 0,
+                radius: 50
+            },
+            buttons: {
+                shoot: {
+                    active: false,
+                    x: this.width - 80,
+                    y: this.height - 80,
+                    radius: 40
+                },
+                build: {
+                    active: false,
+                    x: this.width - 80,
+                    y: this.height - 160,
+                    radius: 40
+                },
+                useItem: {
+                    active: false,
+                    x: this.width - 80,
+                    y: this.height - 240,
+                    radius: 40
+                }
+            }
+        };
+
         // Initialize player
         this.player = {
             x: this.width / 2,
@@ -73,6 +108,11 @@ class Game {
         // Start game loop
         this.lastTime = 0;
         this.gameLoop(0);
+        
+        // Show mobile controls if on mobile
+        if (this.isMobile) {
+            this.showMobileControls();
+        }
     }
 
     generateTerrain() {
@@ -222,30 +262,164 @@ class Game {
             }
         });
         
-        // Scroll wheel to change weapons
+        // Scroll wheel to change weapons - improved sensitivity
         this.canvas.addEventListener('wheel', (e) => {
             if (this.gameOver || this.gamePaused || this.buildMode) return;
             
-            // Determine scroll direction
-            if (e.deltaY < 0) {
-                // Scrolling up - switch to previous weapon
-                this.switchWeapon((this.player.currentWeapon - 1 + this.player.weapons.length) % this.player.weapons.length);
-            } else {
-                // Scrolling down - switch to next weapon
-                this.switchWeapon((this.player.currentWeapon + 1) % this.player.weapons.length);
-            }
+            // Determine scroll direction with improved sensitivity
+            // Use a smaller threshold to make it more responsive
+            const scrollThreshold = 5;
             
-            // Prevent default scrolling behavior
-            e.preventDefault();
+            if (Math.abs(e.deltaY) > scrollThreshold) {
+                if (e.deltaY < 0) {
+                    // Scrolling up - switch to previous weapon
+                    this.switchWeapon((this.player.currentWeapon - 1 + this.player.weapons.length) % this.player.weapons.length);
+                } else {
+                    // Scrolling down - switch to next weapon
+                    this.switchWeapon((this.player.currentWeapon + 1) % this.player.weapons.length);
+                }
+                
+                // Show notification for weapon switch
+                const weapon = this.player.weapons[this.player.currentWeapon];
+                if (weapon.type !== 'empty') {
+                    this.showNotification(`Switched to ${weapon.type}`);
+                }
+                
+                // Prevent default scrolling behavior
+                e.preventDefault();
+            }
         });
+        
+        // Touch controls for mobile
+        if (this.isMobile) {
+            // Touch start event
+            this.canvas.addEventListener('touchstart', (e) => {
+                e.preventDefault(); // Prevent default touch behavior
+                
+                const touch = e.touches[0];
+                const rect = this.canvas.getBoundingClientRect();
+                const touchX = touch.clientX - rect.left;
+                const touchY = touch.clientY - rect.top;
+                
+                // Check if touch is in joystick area (left side of screen)
+                if (touchX < 150 && touchY > this.height - 150) {
+                    this.touchControls.joystick.active = true;
+                    this.touchControls.joystick.startX = touchX;
+                    this.touchControls.joystick.startY = touchY;
+                    this.touchControls.joystick.x = touchX;
+                    this.touchControls.joystick.y = touchY;
+                }
+                
+                // Check if touch is in shoot button area
+                const shootBtn = this.touchControls.buttons.shoot;
+                if (this.distance({x: touchX, y: touchY}, {x: shootBtn.x, y: shootBtn.y}) < shootBtn.radius) {
+                    shootBtn.active = true;
+                    if (this.buildMode) {
+                        this.build();
+                    } else if (this.player.currentWeapon === 0) {
+                        this.usePickaxe();
+                    } else {
+                        this.shoot();
+                    }
+                }
+                
+                // Check if touch is in build button area
+                const buildBtn = this.touchControls.buttons.build;
+                if (this.distance({x: touchX, y: touchY}, {x: buildBtn.x, y: buildBtn.y}) < buildBtn.radius) {
+                    buildBtn.active = true;
+                    this.toggleBuildMode();
+                }
+                
+                // Check if touch is in use item button area
+                const useItemBtn = this.touchControls.buttons.useItem;
+                if (this.distance({x: touchX, y: touchY}, {x: useItemBtn.x, y: useItemBtn.y}) < useItemBtn.radius) {
+                    useItemBtn.active = true;
+                    this.useMedkit();
+                }
+            });
+            
+            // Touch move event
+            this.canvas.addEventListener('touchmove', (e) => {
+                e.preventDefault(); // Prevent default touch behavior
+                
+                const touch = e.touches[0];
+                const rect = this.canvas.getBoundingClientRect();
+                const touchX = touch.clientX - rect.left;
+                const touchY = touch.clientY - rect.top;
+                
+                // Update joystick position if active
+                if (this.touchControls.joystick.active) {
+                    const dx = touchX - this.touchControls.joystick.startX;
+                    const dy = touchY - this.touchControls.joystick.startY;
+                    const distance = Math.sqrt(dx * dx + dy * dy);
+                    
+                    if (distance > this.touchControls.joystick.radius) {
+                        // Limit joystick movement to radius
+                        const angle = Math.atan2(dy, dx);
+                        this.touchControls.joystick.x = this.touchControls.joystick.startX + Math.cos(angle) * this.touchControls.joystick.radius;
+                        this.touchControls.joystick.y = this.touchControls.joystick.startY + Math.sin(angle) * this.touchControls.joystick.radius;
+                    } else {
+                        this.touchControls.joystick.x = touchX;
+                        this.touchControls.joystick.y = touchY;
+                    }
+                }
+                
+                // Update mouse position for aiming
+                this.mouse = {
+                    x: touchX,
+                    y: touchY
+                };
+                
+                // Auto-fire when touching shoot button
+                if (this.touchControls.buttons.shoot.active && this.player.currentWeapon !== 0 && !this.gamePaused && !this.gameOver && !this.buildMode) {
+                    this.shoot();
+                }
+            });
+            
+            // Touch end event
+            this.canvas.addEventListener('touchend', (e) => {
+                e.preventDefault(); // Prevent default touch behavior
+                
+                // Reset joystick
+                this.touchControls.joystick.active = false;
+                
+                // Reset buttons
+                this.touchControls.buttons.shoot.active = false;
+                this.touchControls.buttons.build.active = false;
+                this.touchControls.buttons.useItem.active = false;
+            });
+            
+            // Handle multiple touches for weapon switching
+            this.canvas.addEventListener('touchstart', (e) => {
+                if (e.touches.length === 2) {
+                    // Two finger tap - switch weapon
+                    this.switchWeapon((this.player.currentWeapon + 1) % this.player.weapons.length);
+                    
+                    // Show notification for weapon switch
+                    const weapon = this.player.weapons[this.player.currentWeapon];
+                    if (weapon.type !== 'empty') {
+                        this.showNotification(`Switched to ${weapon.type}`);
+                    }
+                }
+            });
+        }
     }
 
     switchWeapon(index) {
         if (index < this.player.weapons.length) {
             this.player.currentWeapon = index;
+            
+            // Update UI to show active weapon
             document.querySelectorAll('.weapon-slot').forEach((slot, i) => {
                 slot.classList.toggle('active', i === index);
             });
+            
+            // Update weapon name in slot
+            const weapon = this.player.weapons[index];
+            const weaponName = weapon.type === 'empty' ? 'Empty' : 
+                              weapon.type.charAt(0).toUpperCase() + weapon.type.slice(1);
+            
+            document.querySelectorAll('.weapon-slot')[index].textContent = weaponName;
         }
     }
 
@@ -575,11 +749,27 @@ class Game {
     update(deltaTime) {
         if (this.gameOver || this.gamePaused) return;
 
-        // Update player position
-        if (this.keys['w'] || this.keys['ArrowUp']) this.player.y -= this.player.speed;
-        if (this.keys['s'] || this.keys['ArrowDown']) this.player.y += this.player.speed;
-        if (this.keys['a'] || this.keys['ArrowLeft']) this.player.x -= this.player.speed;
-        if (this.keys['d'] || this.keys['ArrowRight']) this.player.x += this.player.speed;
+        // Update player position based on keyboard or joystick
+        if (this.isMobile && this.touchControls.joystick.active) {
+            // Mobile joystick control
+            const dx = this.touchControls.joystick.x - this.touchControls.joystick.startX;
+            const dy = this.touchControls.joystick.y - this.touchControls.joystick.startY;
+            const distance = Math.sqrt(dx * dx + dy * dy);
+            
+            if (distance > 5) { // Dead zone
+                const angle = Math.atan2(dy, dx);
+                const speed = Math.min(distance / this.touchControls.joystick.radius, 1) * this.player.speed;
+                
+                this.player.x += Math.cos(angle) * speed;
+                this.player.y += Math.sin(angle) * speed;
+            }
+        } else {
+            // Keyboard control
+            if (this.keys['w'] || this.keys['ArrowUp']) this.player.y -= this.player.speed;
+            if (this.keys['s'] || this.keys['ArrowDown']) this.player.y += this.player.speed;
+            if (this.keys['a'] || this.keys['ArrowLeft']) this.player.x -= this.player.speed;
+            if (this.keys['d'] || this.keys['ArrowRight']) this.player.x += this.player.speed;
+        }
 
         // Update bots
         this.updateBots(deltaTime);
@@ -762,6 +952,12 @@ class Game {
             // Redirect to lobby
             window.location.href = 'index.html';
         });
+        
+        // Remove mobile controls if they exist
+        const mobileControls = document.getElementById('mobileControls');
+        if (mobileControls) {
+            mobileControls.remove();
+        }
     }
 
     updateHUD() {
@@ -955,6 +1151,11 @@ class Game {
                 5
             );
         });
+        
+        // Draw mobile controls if on mobile
+        if (this.isMobile) {
+            this.drawMobileControls();
+        }
     }
 
     drawBullets() {
@@ -1540,6 +1741,135 @@ class Game {
         
         // Show notification
         this.showNotification("Used shield potion! +50 shield");
+    }
+
+    showMobileControls() {
+        // Create mobile controls container
+        const mobileControls = document.createElement('div');
+        mobileControls.className = 'mobile-controls';
+        mobileControls.id = 'mobileControls';
+        
+        // Create weapon switcher
+        const weaponSwitcher = document.createElement('div');
+        weaponSwitcher.className = 'weapon-switcher';
+        weaponSwitcher.innerHTML = `
+            <div class="weapon-slot active">1</div>
+            <div class="weapon-slot">2</div>
+            <div class="weapon-slot">3</div>
+        `;
+        
+        // Add weapon switcher to mobile controls
+        mobileControls.appendChild(weaponSwitcher);
+        
+        // Add mobile controls to document
+        document.body.appendChild(mobileControls);
+        
+        // Add event listeners to weapon slots
+        document.querySelectorAll('.weapon-switcher .weapon-slot').forEach((slot, i) => {
+            slot.addEventListener('click', () => {
+                this.switchWeapon(i);
+                
+                // Update active weapon slot
+                document.querySelectorAll('.weapon-switcher .weapon-slot').forEach((s, j) => {
+                    s.classList.toggle('active', j === i);
+                });
+            });
+        });
+    }
+    
+    drawMobileControls() {
+        // Draw joystick
+        if (this.touchControls.joystick.active) {
+            // Draw joystick base
+            this.ctx.fillStyle = 'rgba(0, 0, 0, 0.5)';
+            this.ctx.beginPath();
+            this.ctx.arc(
+                this.touchControls.joystick.startX,
+                this.touchControls.joystick.startY,
+                this.touchControls.joystick.radius,
+                0,
+                Math.PI * 2
+            );
+            this.ctx.fill();
+            
+            // Draw joystick handle
+            this.ctx.fillStyle = 'rgba(255, 255, 255, 0.7)';
+            this.ctx.beginPath();
+            this.ctx.arc(
+                this.touchControls.joystick.x,
+                this.touchControls.joystick.y,
+                20,
+                0,
+                Math.PI * 2
+            );
+            this.ctx.fill();
+        } else {
+            // Draw joystick base (inactive)
+            this.ctx.fillStyle = 'rgba(0, 0, 0, 0.3)';
+            this.ctx.beginPath();
+            this.ctx.arc(
+                this.touchControls.joystick.startX,
+                this.touchControls.joystick.startY,
+                this.touchControls.joystick.radius,
+                0,
+                Math.PI * 2
+            );
+            this.ctx.fill();
+        }
+        
+        // Draw action buttons
+        const buttons = this.touchControls.buttons;
+        
+        // Draw shoot button
+        this.ctx.fillStyle = buttons.shoot.active ? 'rgba(255, 0, 0, 0.7)' : 'rgba(255, 0, 0, 0.5)';
+        this.ctx.beginPath();
+        this.ctx.arc(
+            buttons.shoot.x,
+            buttons.shoot.y,
+            buttons.shoot.radius,
+            0,
+            Math.PI * 2
+        );
+        this.ctx.fill();
+        
+        // Draw build button
+        this.ctx.fillStyle = buttons.build.active ? 'rgba(0, 255, 0, 0.7)' : 'rgba(0, 255, 0, 0.5)';
+        this.ctx.beginPath();
+        this.ctx.arc(
+            buttons.build.x,
+            buttons.build.y,
+            buttons.build.radius,
+            0,
+            Math.PI * 2
+        );
+        this.ctx.fill();
+        
+        // Draw use item button
+        this.ctx.fillStyle = buttons.useItem.active ? 'rgba(0, 0, 255, 0.7)' : 'rgba(0, 0, 255, 0.5)';
+        this.ctx.beginPath();
+        this.ctx.arc(
+            buttons.useItem.x,
+            buttons.useItem.y,
+            buttons.useItem.radius,
+            0,
+            Math.PI * 2
+        );
+        this.ctx.fill();
+        
+        // Draw button icons
+        this.ctx.fillStyle = '#ffffff';
+        this.ctx.font = '20px Arial';
+        this.ctx.textAlign = 'center';
+        this.ctx.textBaseline = 'middle';
+        
+        // Shoot icon
+        this.ctx.fillText('🔫', buttons.shoot.x, buttons.shoot.y);
+        
+        // Build icon
+        this.ctx.fillText('🏗️', buttons.build.x, buttons.build.y);
+        
+        // Use item icon
+        this.ctx.fillText('💊', buttons.useItem.x, buttons.useItem.y);
     }
 }
 

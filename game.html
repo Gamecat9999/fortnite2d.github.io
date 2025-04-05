@@ -7,44 +7,27 @@
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
-    <div class="game-container">
+    <div id="game-container">
         <canvas id="gameCanvas"></canvas>
         <div class="hud">
-            <div class="health-bar">
-                <div class="health-fill"></div>
-            </div>
-            <div class="shield-bar">
-                <div class="shield-fill"></div>
+            <div class="health-container">
+                <div class="health-bar"></div>
+                <div class="shield-bar"></div>
             </div>
             <div class="weapon-slots">
-                <div class="weapon-slot active" data-weapon="pickaxe">
-                    <span>Pickaxe</span>
-                </div>
-                <div class="weapon-slot" data-weapon="empty">
-                    <span>Empty</span>
-                </div>
-                <div class="weapon-slot" data-weapon="empty">
-                    <span>Empty</span>
-                </div>
+                <div class="weapon-slot active">1</div>
+                <div class="weapon-slot">2</div>
+                <div class="weapon-slot">3</div>
             </div>
             <div class="materials">
-                <div class="material">
-                    <span>Wood: 0</span>
-                </div>
-                <div class="material">
-                    <span>Stone: 0</span>
-                </div>
+                <div class="material">Wood: 0</div>
+                <div class="material">Stone: 0</div>
+                <div class="material">Metal: 0</div>
             </div>
             <div class="ammo">
-                <div class="ammo-type">
-                    <span>Pistol: 0</span>
-                </div>
-                <div class="ammo-type">
-                    <span>Shotgun: 0</span>
-                </div>
-                <div class="ammo-type">
-                    <span>Rifle: 0</span>
-                </div>
+                <div class="ammo-type">Pistol: 0</div>
+                <div class="ammo-type">Shotgun: 0</div>
+                <div class="ammo-type">Rifle: 0</div>
             </div>
             <div class="items">
                 <div class="item">
@@ -54,6 +37,29 @@
                     <span>Shield Potion: 0</span>
                 </div>
             </div>
+        </div>
+        <div class="mobile-controls">
+            <div class="weapon-switcher">
+                <div class="weapon-slot active">1</div>
+                <div class="weapon-slot">2</div>
+                <div class="weapon-slot">3</div>
+            </div>
+        </div>
+    </div>
+    <div class="game-over">
+        <h1>Game Over</h1>
+        <h2>Stats</h2>
+        <p>Kills: <span id="kills">0</span></p>
+        <p>Deaths: <span id="deaths">0</span></p>
+        <div class="button-container">
+            <button class="button" id="returnToLobby">Return to Lobby</button>
+        </div>
+    </div>
+    <div class="pause-menu">
+        <h1>Paused</h1>
+        <div class="button-container">
+            <button class="button" id="resume">Resume</button>
+            <button class="button" id="pauseReturnToLobby">Return to Lobby</button>
         </div>
     </div>
     <script src="game.js"></script>

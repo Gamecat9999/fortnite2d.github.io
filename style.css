@@ -548,4 +548,93 @@ input {
 
 .item span {
     margin-left: 5px;
+}
+
+/* Mobile controls */
+.mobile-controls {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    z-index: 1000;
+    display: none;
+}
+
+@media (max-width: 768px) {
+    .mobile-controls {
+        display: block;
+    }
+    
+    .hud {
+        bottom: 10px;
+        left: 50%;
+        transform: translateX(-50%);
+        padding: 5px;
+        font-size: 12px;
+    }
+    
+    .health-bar, .shield-bar {
+        height: 8px;
+    }
+    
+    .weapon-slots, .materials, .ammo, .items {
+        margin-top: 5px;
+    }
+    
+    .weapon-slot, .material, .ammo-type, .item {
+        padding: 3px 6px;
+        font-size: 12px;
+    }
+    
+    .notification {
+        font-size: 14px;
+        padding: 5px 10px;
+    }
+    
+    .game-over, .pause-menu {
+        width: 80%;
+        padding: 15px;
+    }
+    
+    .game-over h1, .pause-menu h1 {
+        font-size: 24px;
+    }
+    
+    .game-over h2, .pause-menu h2 {
+        font-size: 18px;
+    }
+    
+    .button-container {
+        flex-direction: column;
+        gap: 10px;
+    }
+    
+    .button {
+        width: 100%;
+        padding: 10px;
+    }
+}
+
+.weapon-switcher {
+    display: flex;
+    gap: 5px;
+    background-color: rgba(0, 0, 0, 0.5);
+    padding: 5px;
+    border-radius: 5px;
+}
+
+.weapon-switcher .weapon-slot {
+    width: 30px;
+    height: 30px;
+    background-color: rgba(255, 255, 255, 0.2);
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 5px;
+    cursor: pointer;
+}
+
+.weapon-switcher .weapon-slot.active {
+    background-color: rgba(255, 255, 255, 0.5);
+    font-weight: bold;
 } 

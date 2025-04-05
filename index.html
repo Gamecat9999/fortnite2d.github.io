@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Fortnite 2D - Lobby</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="lobby-container">
+        <div class="lobby-header">
+            <h1>Fortnite 2D</h1>
+        </div>
+
+        <div class="player-info">
+            <input type="text" id="playerName" placeholder="Enter your name" maxlength="20">
+        </div>
+
+        <div class="lobby-content">
+            <div class="room-section">
+                <div class="room-code-container">
+                    <h2>Room Code</h2>
+                    <div class="room-code">Not Created</div>
+                    <button id="copyCode" disabled>Copy Code</button>
+                </div>
+
+                <div class="join-section">
+                    <h2>Join Game</h2>
+                    <input type="text" id="roomCode" placeholder="Enter room code" maxlength="6">
+                    <button id="joinGame">Join</button>
+                </div>
+            </div>
+
+            <div class="players-section">
+                <h2>Players</h2>
+                <div class="player-list">
+                    <!-- Player slots will be added here -->
+                </div>
+                <button id="createGame">Create Game</button>
+                <button id="startGame" disabled>Start Game</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="lobby.js"></script>
+</body>
+</html> 

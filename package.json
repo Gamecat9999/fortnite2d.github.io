@@ -1,0 +1,12 @@
+{
+  "name": "fortnite-2d-clone",
+  "version": "1.0.0",
+  "description": "A 2D Fortnite clone with multiplayer support",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "ws": "^8.13.0"
+  }
+} 

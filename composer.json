@@ -1,0 +1,12 @@
+{
+    "name": "fortnite-2d-clone",
+    "description": "A 2D Fortnite clone with multiplayer support",
+    "require": {
+        "cboden/ratchet": "^0.4.4"
+    },
+    "autoload": {
+        "psr-4": {
+            "Fortnite2D\\": "src/"
+        }
+    }
+} 

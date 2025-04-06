@@ -304,9 +304,9 @@ class Game {
     initializeTouchControls() {
         // Calculate responsive sizes based on screen dimensions
         const screenSize = Math.min(this.width, this.height);
-        const joystickRadius = screenSize * 0.12; // 12% of screen size
-        const buttonRadius = screenSize * 0.08; // 8% of screen size
-        const itemButtonRadius = screenSize * 0.06; // 6% of screen size
+        const joystickRadius = screenSize * 0.15; // 15% of screen size
+        const iconSize = screenSize * 0.06; // 6% of screen size
+        const iconSpacing = iconSize * 1.2; // 20% spacing between icons
         
         // Position joystick on the left side
         this.touchControls.joystick.centerX = joystickRadius + 20;
@@ -314,24 +314,43 @@ class Game {
         this.touchControls.joystick.radius = joystickRadius;
         
         // Position fire button on the right side
-        this.touchControls.fireButton.x = this.width - buttonRadius - 20;
-        this.touchControls.fireButton.y = this.height - buttonRadius - 20;
-        this.touchControls.fireButton.radius = buttonRadius;
+        this.touchControls.fireButton.x = this.width - joystickRadius - 20;
+        this.touchControls.fireButton.y = this.height - joystickRadius - 20;
+        this.touchControls.fireButton.radius = joystickRadius * 0.7;
         
-        // Position build button
-        this.touchControls.buildButton.x = this.width - buttonRadius - 20;
-        this.touchControls.buildButton.y = this.height - (buttonRadius * 3) - 60;
-        this.touchControls.buildButton.radius = buttonRadius;
+        // Position weapon icons at the top right
+        const weaponIconX = this.width - iconSize * 3.5;
+        const weaponIconY = screenSize * 0.05;
         
-        // Position item buttons
-        const itemButtonY = this.height - (itemButtonRadius * 3) - 40;
-        const itemButtonSpacing = itemButtonRadius * 2.5;
+        // Create weapon touch areas
+        this.touchControls.weaponAreas = this.player.weapons.map((weapon, index) => ({
+            x: weaponIconX + (index * iconSpacing),
+            y: weaponIconY,
+            width: iconSize,
+            height: iconSize
+        }));
         
-        this.touchControls.itemButtons.forEach((button, index) => {
-            button.x = this.width - itemButtonRadius - 20;
-            button.y = itemButtonY + (index * itemButtonSpacing);
-            button.radius = itemButtonRadius;
-        });
+        // Position item icons at the bottom right
+        const itemIconX = this.width - iconSize * 1.5;
+        const itemIconY = this.height - iconSize * 3;
+        
+        // Create item touch areas
+        this.touchControls.itemAreas = [
+            {
+                x: itemIconX,
+                y: itemIconY,
+                width: iconSize,
+                height: iconSize,
+                type: 'medkit'
+            },
+            {
+                x: itemIconX,
+                y: itemIconY + iconSpacing,
+                width: iconSize,
+                height: iconSize,
+                type: 'shieldPotion'
+            }
+        ];
     }
     
     createMobileUI() {
@@ -352,25 +371,6 @@ class Game {
         fireButton.id = 'mobileFireButton';
         mobileUI.appendChild(fireButton);
         
-        // Create build button
-        const buildButton = document.createElement('div');
-        buildButton.className = 'mobile-button build-button';
-        buildButton.id = 'mobileBuildButton';
-        mobileUI.appendChild(buildButton);
-        
-        // Create item buttons
-        const itemContainer = document.createElement('div');
-        itemContainer.className = 'mobile-item-container';
-        mobileUI.appendChild(itemContainer);
-        
-        this.touchControls.itemButtons.forEach((button, index) => {
-            const itemButton = document.createElement('div');
-            itemButton.className = 'mobile-button item-button';
-            itemButton.id = `mobileItemButton${index}`;
-            itemButton.dataset.item = button.type;
-            itemContainer.appendChild(itemButton);
-        });
-        
         // Create pause button
         const pauseButton = document.createElement('div');
         pauseButton.className = 'mobile-button pause-button';
@@ -388,23 +388,8 @@ class Game {
             }
         });
         
-        document.getElementById('mobileBuildButton').addEventListener('click', () => {
-            this.toggleBuildMode();
-        });
-        
         document.getElementById('mobilePauseButton').addEventListener('click', () => {
             this.togglePause();
-        });
-        
-        // Add event listeners to item buttons
-        this.touchControls.itemButtons.forEach((button, index) => {
-            document.getElementById(`mobileItemButton${index}`).addEventListener('click', () => {
-                if (button.type === 'medkit') {
-                    this.useMedkit();
-                } else if (button.type === 'shieldPotion') {
-                    this.useShieldPotion();
-                }
-            });
         });
     }
     
@@ -438,43 +423,38 @@ class Game {
             return;
         }
         
-        // Check if touch is on build button
-        const buildDist = Math.sqrt(
-            Math.pow(touchX - this.touchControls.buildButton.x, 2) +
-            Math.pow(touchY - this.touchControls.buildButton.y, 2)
-        );
-        
-        if (buildDist <= this.touchControls.buildButton.radius) {
-            this.touchControls.buildButton.active = true;
-            return;
+        // Check if touch is on weapon icons
+        if (this.touchControls.weaponAreas) {
+            this.touchControls.weaponAreas.forEach((area, index) => {
+                if (
+                    touchX >= area.x && 
+                    touchX <= area.x + area.width && 
+                    touchY >= area.y && 
+                    touchY <= area.y + area.height
+                ) {
+                    this.switchWeapon(index);
+                    return;
+                }
+            });
         }
         
-        // Check if touch is on item buttons
-        this.touchControls.itemButtons.forEach((button, index) => {
-            const itemDist = Math.sqrt(
-                Math.pow(touchX - button.x, 2) +
-                Math.pow(touchY - button.y, 2)
-            );
-            
-            if (itemDist <= button.radius) {
-                button.active = true;
-                if (button.type === 'medkit') {
-                    this.useMedkit();
-                } else if (button.type === 'shieldPotion') {
-                    this.useShieldPotion();
+        // Check if touch is on item icons
+        if (this.touchControls.itemAreas) {
+            this.touchControls.itemAreas.forEach(area => {
+                if (
+                    touchX >= area.x && 
+                    touchX <= area.x + area.width && 
+                    touchY >= area.y && 
+                    touchY <= area.y + area.height
+                ) {
+                    if (area.type === 'medkit') {
+                        this.useMedkit();
+                    } else if (area.type === 'shieldPotion') {
+                        this.useShieldPotion();
+                    }
+                    return;
                 }
-                return;
-            }
-        });
-        
-        // If touch is not on any control, switch weapon
-        // Divide the screen into 3 vertical sections for weapon switching
-        const sectionWidth = this.width / 3;
-        const section = Math.floor(touchX / sectionWidth);
-        
-        // Switch to the corresponding weapon (0 is pickaxe, 1-2 are other weapons)
-        if (section >= 0 && section < 3) {
-            this.switchWeapon(section);
+            });
         }
     }
     
@@ -521,14 +501,6 @@ class Game {
         
         // Reset fire button
         this.touchControls.fireButton.active = false;
-        
-        // Reset build button
-        this.touchControls.buildButton.active = false;
-        
-        // Reset item buttons
-        this.touchControls.itemButtons.forEach(button => {
-            button.active = false;
-        });
     }
 
     switchWeapon(index) {
@@ -1431,11 +1403,116 @@ class Game {
         
         // Calculate responsive sizes based on screen dimensions
         const screenSize = Math.min(this.width, this.height);
-        const joystickRadius = screenSize * 0.12; // 12% of screen size
-        const buttonRadius = screenSize * 0.08; // 8% of screen size
-        const itemButtonRadius = screenSize * 0.06; // 6% of screen size
+        const joystickRadius = screenSize * 0.15; // 15% of screen size
+        const iconSize = screenSize * 0.06; // 6% of screen size
+        const iconSpacing = iconSize * 1.2; // 20% spacing between icons
         
-        // Draw joystick
+        // Draw health and shield bars at the top
+        const barWidth = this.width * 0.4; // 40% of screen width
+        const barHeight = screenSize * 0.02; // 2% of screen size
+        const barX = (this.width - barWidth) / 2;
+        const barY = screenSize * 0.02; // 2% from top
+        
+        // Health bar background
+        this.ctx.fillStyle = 'rgba(0, 0, 0, 0.5)';
+        this.ctx.fillRect(barX, barY, barWidth, barHeight);
+        
+        // Health bar fill
+        this.ctx.fillStyle = '#ff0000';
+        this.ctx.fillRect(barX, barY, barWidth * (this.player.health / 100), barHeight);
+        
+        // Shield bar background
+        this.ctx.fillStyle = 'rgba(0, 0, 0, 0.5)';
+        this.ctx.fillRect(barX, barY + barHeight + 2, barWidth, barHeight);
+        
+        // Shield bar fill
+        this.ctx.fillStyle = '#0000ff';
+        this.ctx.fillRect(barX, barY + barHeight + 2, barWidth * (this.player.shield / 100), barHeight);
+        
+        // Draw weapon icons at the top right
+        const weaponIconX = this.width - iconSize * 3.5;
+        const weaponIconY = screenSize * 0.05;
+        
+        this.player.weapons.forEach((weapon, index) => {
+            // Draw weapon icon background
+            this.ctx.fillStyle = index === this.player.currentWeapon ? 'rgba(255, 255, 0, 0.7)' : 'rgba(255, 255, 0, 0.3)';
+            this.ctx.fillRect(
+                weaponIconX + (index * iconSpacing),
+                weaponIconY,
+                iconSize,
+                iconSize
+            );
+            
+            // Draw weapon icon
+            this.ctx.fillStyle = '#ffffff';
+            this.ctx.font = `${Math.floor(iconSize * 0.6)}px Arial`;
+            this.ctx.textAlign = 'center';
+            this.ctx.textBaseline = 'middle';
+            
+            let weaponSymbol = '?';
+            if (weapon.type === 'pickaxe') weaponSymbol = 'P';
+            else if (weapon.type === 'pistol') weaponSymbol = '1';
+            else if (weapon.type === 'shotgun') weaponSymbol = '2';
+            else if (weapon.type === 'rifle') weaponSymbol = '3';
+            else if (weapon.type === 'empty') weaponSymbol = '-';
+            
+            this.ctx.fillText(
+                weaponSymbol,
+                weaponIconX + (index * iconSpacing) + iconSize/2,
+                weaponIconY + iconSize/2
+            );
+            
+            // Draw ammo count if applicable
+            if (weapon.type !== 'pickaxe' && weapon.type !== 'empty') {
+                const ammo = this.player.ammo[weapon.type] || 0;
+                this.ctx.font = `${Math.floor(iconSize * 0.4)}px Arial`;
+                this.ctx.fillText(
+                    ammo.toString(),
+                    weaponIconX + (index * iconSpacing) + iconSize/2,
+                    weaponIconY + iconSize + iconSize/4
+                );
+            }
+        });
+        
+        // Draw item icons at the bottom right
+        const itemIconX = this.width - iconSize * 1.5;
+        const itemIconY = this.height - iconSize * 3;
+        
+        // Medkit icon
+        this.ctx.fillStyle = 'rgba(0, 255, 0, 0.5)';
+        this.ctx.fillRect(itemIconX, itemIconY, iconSize, iconSize);
+        this.ctx.fillStyle = '#ffffff';
+        this.ctx.font = `${Math.floor(iconSize * 0.6)}px Arial`;
+        this.ctx.textAlign = 'center';
+        this.ctx.textBaseline = 'middle';
+        this.ctx.fillText('F', itemIconX + iconSize/2, itemIconY + iconSize/2);
+        
+        // Draw medkit count
+        this.ctx.font = `${Math.floor(iconSize * 0.4)}px Arial`;
+        this.ctx.fillText(
+            this.player.items.medkit.toString(),
+            itemIconX + iconSize/2,
+            itemIconY + iconSize + iconSize/4
+        );
+        
+        // Shield potion icon
+        this.ctx.fillStyle = 'rgba(0, 0, 255, 0.5)';
+        this.ctx.fillRect(itemIconX, itemIconY + iconSpacing, iconSize, iconSize);
+        this.ctx.fillStyle = '#ffffff';
+        this.ctx.font = `${Math.floor(iconSize * 0.6)}px Arial`;
+        this.ctx.textAlign = 'center';
+        this.ctx.textBaseline = 'middle';
+        this.ctx.fillText('G', itemIconX + iconSize/2, itemIconY + iconSpacing + iconSize/2);
+        
+        // Draw shield potion count
+        this.ctx.font = `${Math.floor(iconSize * 0.4)}px Arial`;
+        this.ctx.fillText(
+            this.player.items.shieldPotion.toString(),
+            itemIconX + iconSize/2,
+            itemIconY + iconSpacing + iconSize + iconSize/4
+        );
+        
+        // Draw joystick on the left side
         this.ctx.beginPath();
         this.ctx.arc(
             this.touchControls.joystick.centerX,
@@ -1461,70 +1538,27 @@ class Game {
             this.ctx.fill();
         }
         
-        // Draw fire button
+        // Draw fire button on the right side
+        const fireButtonX = this.width - joystickRadius - 20;
+        const fireButtonY = this.height - joystickRadius - 20;
+        
         this.ctx.beginPath();
         this.ctx.arc(
-            this.touchControls.fireButton.x,
-            this.touchControls.fireButton.y,
-            this.touchControls.fireButton.radius,
+            fireButtonX,
+            fireButtonY,
+            joystickRadius * 0.7,
             0,
             Math.PI * 2
         );
         this.ctx.fillStyle = this.touchControls.fireButton.active ? 'rgba(255, 0, 0, 0.7)' : 'rgba(255, 0, 0, 0.5)';
         this.ctx.fill();
         
-        // Draw build button
-        this.ctx.beginPath();
-        this.ctx.arc(
-            this.touchControls.buildButton.x,
-            this.touchControls.buildButton.y,
-            this.touchControls.buildButton.radius,
-            0,
-            Math.PI * 2
-        );
-        this.ctx.fillStyle = this.touchControls.buildButton.active ? 'rgba(0, 255, 0, 0.7)' : 'rgba(0, 255, 0, 0.5)';
-        this.ctx.fill();
-        
-        // Draw item buttons
-        this.touchControls.itemButtons.forEach((button, index) => {
-            this.ctx.beginPath();
-            this.ctx.arc(
-                button.x,
-                button.y,
-                button.radius,
-                0,
-                Math.PI * 2
-            );
-            this.ctx.fillStyle = button.active ? 'rgba(0, 0, 255, 0.7)' : 'rgba(0, 0, 255, 0.5)';
-            this.ctx.fill();
-            
-            // Draw item icon
-            this.ctx.fillStyle = 'white';
-            this.ctx.font = `${Math.floor(screenSize * 0.04)}px Arial`;
-            this.ctx.textAlign = 'center';
-            this.ctx.textBaseline = 'middle';
-            this.ctx.fillText(button.type === 'medkit' ? 'F' : 'G', button.x, button.y);
-        });
-        
-        // Draw weapon indicator at the top of the screen
-        const weaponNames = ['Pickaxe', 'Pistol', 'Shotgun', 'Rifle'];
-        const currentWeapon = this.player.weapons[this.player.currentWeapon];
-        const weaponName = currentWeapon.type === 'empty' ? 'Empty' : 
-                          currentWeapon.type.charAt(0).toUpperCase() + currentWeapon.type.slice(1);
-        
-        this.ctx.fillStyle = 'rgba(0, 0, 0, 0.5)';
-        this.ctx.fillRect(0, 0, this.width, 40);
-        
+        // Draw fire icon
         this.ctx.fillStyle = '#ffffff';
-        this.ctx.font = `${Math.floor(screenSize * 0.04)}px Arial`;
+        this.ctx.font = `${Math.floor(joystickRadius * 0.5)}px Arial`;
         this.ctx.textAlign = 'center';
-        this.ctx.fillText(`Weapon: ${weaponName}`, this.width / 2, 25);
-        
-        // Draw weapon ammo if applicable
-        if (currentWeapon.type !== 'pickaxe' && currentWeapon.type !== 'empty') {
-            const ammo = this.player.ammo[currentWeapon.type] || 0;
-            this.ctx.fillText(`Ammo: ${ammo}`, this.width / 2, 50);
-        }
+        this.ctx.textBaseline = 'middle';
+        this.ctx.fillText('FIRE', fireButtonX, fireButtonY);
     }
 
     gameLoop(timestamp) {

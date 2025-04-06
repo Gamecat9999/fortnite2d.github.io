@@ -59,7 +59,7 @@ class Game {
         this.shotCooldown = 500; // milliseconds between shots
         this.gameOver = false;
         this.gamePaused = false;
-        this.minimapVisible = true;
+        this.minimapVisible = !this.isMobile; // Hide minimap on mobile
         this.buildMode = false;
         this.selectedBuildingType = 'wall'; // wall, tower, base
         this.lastItemUseTime = 0;
@@ -73,28 +73,23 @@ class Game {
                 y: 0,
                 centerX: 0,
                 centerY: 0,
-                radius: 50
+                radius: 0
             },
-            shootButton: {
+            fireButton: {
                 active: false,
                 x: 0,
                 y: 0,
-                radius: 40
+                radius: 0
             },
             buildButton: {
                 active: false,
                 x: 0,
                 y: 0,
-                radius: 40
+                radius: 0
             },
-            weaponButtons: [
-                { active: false, x: 0, y: 0, radius: 30 },
-                { active: false, x: 0, y: 0, radius: 30 },
-                { active: false, x: 0, y: 0, radius: 30 }
-            ],
             itemButtons: [
-                { active: false, x: 0, y: 0, radius: 30, type: 'medkit' },
-                { active: false, x: 0, y: 0, radius: 30, type: 'shieldPotion' }
+                { active: false, x: 0, y: 0, radius: 0, type: 'medkit' },
+                { active: false, x: 0, y: 0, radius: 0, type: 'shieldPotion' }
             ]
         };
 
@@ -114,10 +109,10 @@ class Game {
 
     generateTerrain() {
         // Generate trees
-        for (let i = 0; i < 50; i++) {
+        for (let i = 0; i < 100; i++) {
             this.trees.push({
-                x: Math.random() * 2000 - 1000,
-                y: Math.random() * 2000 - 1000,
+                x: Math.random() * 4000 - 2000,
+                y: Math.random() * 4000 - 2000,
                 width: 40,
                 height: 60,
                 health: 100
@@ -125,10 +120,10 @@ class Game {
         }
 
         // Generate rocks
-        for (let i = 0; i < 30; i++) {
+        for (let i = 0; i < 60; i++) {
             this.rocks.push({
-                x: Math.random() * 2000 - 1000,
-                y: Math.random() * 2000 - 1000,
+                x: Math.random() * 4000 - 2000,
+                y: Math.random() * 4000 - 2000,
                 width: 30,
                 height: 30,
                 health: 200
@@ -136,10 +131,10 @@ class Game {
         }
 
         // Generate chests
-        for (let i = 0; i < 10; i++) {
+        for (let i = 0; i < 20; i++) {
             this.chests.push({
-                x: Math.random() * 2000 - 1000,
-                y: Math.random() * 2000 - 1000,
+                x: Math.random() * 4000 - 2000,
+                y: Math.random() * 4000 - 2000,
                 width: 30,
                 height: 30,
                 opened: false
@@ -160,11 +155,11 @@ class Game {
         // Shuffle bot names
         const shuffledNames = [...botNames].sort(() => Math.random() - 0.5);
         
-        // Generate 5 bots
-        for (let i = 0; i < 5; i++) {
+        // Generate 19 bots
+        for (let i = 0; i < 19; i++) {
             this.bots.push({
-                x: Math.random() * 2000 - 1000,
-                y: Math.random() * 2000 - 1000,
+                x: Math.random() * 4000 - 2000,
+                y: Math.random() * 4000 - 2000,
                 width: 30,
                 height: 30,
                 speed: 2 + Math.random() * 2,
@@ -194,8 +189,8 @@ class Game {
                 shotCooldown: 500 + Math.random() * 500,
                 state: 'patrol', // patrol, chase, attack, build, gather
                 patrolPoint: {
-                    x: Math.random() * 2000 - 1000,
-                    y: Math.random() * 2000 - 1000
+                    x: Math.random() * 4000 - 2000,
+                    y: Math.random() * 4000 - 2000
                 },
                 patrolTimer: 0,
                 patrolDuration: 3000 + Math.random() * 5000,
@@ -307,34 +302,35 @@ class Game {
     }
     
     initializeTouchControls() {
-        // Position joystick on the left side
-        this.touchControls.joystick.centerX = 100;
-        this.touchControls.joystick.centerY = this.height - 100;
+        // Calculate responsive sizes based on screen dimensions
+        const screenSize = Math.min(this.width, this.height);
+        const joystickRadius = screenSize * 0.12; // 12% of screen size
+        const buttonRadius = screenSize * 0.08; // 8% of screen size
+        const itemButtonRadius = screenSize * 0.06; // 6% of screen size
         
-        // Position shoot button on the right side
-        this.touchControls.shootButton.x = this.width - 100;
-        this.touchControls.shootButton.y = this.height - 100;
+        // Position joystick on the left side
+        this.touchControls.joystick.centerX = joystickRadius + 20;
+        this.touchControls.joystick.centerY = this.height - joystickRadius - 20;
+        this.touchControls.joystick.radius = joystickRadius;
+        
+        // Position fire button on the right side
+        this.touchControls.fireButton.x = this.width - buttonRadius - 20;
+        this.touchControls.fireButton.y = this.height - buttonRadius - 20;
+        this.touchControls.fireButton.radius = buttonRadius;
         
         // Position build button
-        this.touchControls.buildButton.x = this.width - 100;
-        this.touchControls.buildButton.y = this.height - 200;
-        
-        // Position weapon buttons
-        const weaponButtonY = 100;
-        const weaponButtonSpacing = 80;
-        
-        this.touchControls.weaponButtons.forEach((button, index) => {
-            button.x = this.width - 100;
-            button.y = weaponButtonY + (index * weaponButtonSpacing);
-        });
+        this.touchControls.buildButton.x = this.width - buttonRadius - 20;
+        this.touchControls.buildButton.y = this.height - (buttonRadius * 3) - 60;
+        this.touchControls.buildButton.radius = buttonRadius;
         
         // Position item buttons
-        const itemButtonY = this.height - 300;
-        const itemButtonSpacing = 80;
+        const itemButtonY = this.height - (itemButtonRadius * 3) - 40;
+        const itemButtonSpacing = itemButtonRadius * 2.5;
         
         this.touchControls.itemButtons.forEach((button, index) => {
-            button.x = this.width - 100;
+            button.x = this.width - itemButtonRadius - 20;
             button.y = itemButtonY + (index * itemButtonSpacing);
+            button.radius = itemButtonRadius;
         });
     }
     
@@ -350,30 +346,17 @@ class Game {
         joystick.id = 'mobileJoystick';
         mobileUI.appendChild(joystick);
         
-        // Create shoot button
-        const shootButton = document.createElement('div');
-        shootButton.className = 'mobile-button shoot-button';
-        shootButton.id = 'mobileShootButton';
-        mobileUI.appendChild(shootButton);
+        // Create fire button
+        const fireButton = document.createElement('div');
+        fireButton.className = 'mobile-button fire-button';
+        fireButton.id = 'mobileFireButton';
+        mobileUI.appendChild(fireButton);
         
         // Create build button
         const buildButton = document.createElement('div');
         buildButton.className = 'mobile-button build-button';
         buildButton.id = 'mobileBuildButton';
         mobileUI.appendChild(buildButton);
-        
-        // Create weapon buttons
-        const weaponContainer = document.createElement('div');
-        weaponContainer.className = 'mobile-weapon-container';
-        mobileUI.appendChild(weaponContainer);
-        
-        this.touchControls.weaponButtons.forEach((button, index) => {
-            const weaponButton = document.createElement('div');
-            weaponButton.className = 'mobile-button weapon-button';
-            weaponButton.id = `mobileWeaponButton${index}`;
-            weaponButton.dataset.weapon = index;
-            weaponContainer.appendChild(weaponButton);
-        });
         
         // Create item buttons
         const itemContainer = document.createElement('div');
@@ -395,7 +378,7 @@ class Game {
         mobileUI.appendChild(pauseButton);
         
         // Add event listeners to mobile UI elements
-        document.getElementById('mobileShootButton').addEventListener('click', () => {
+        document.getElementById('mobileFireButton').addEventListener('click', () => {
             if (this.buildMode) {
                 this.build();
             } else if (this.player.currentWeapon === 0) {
@@ -411,13 +394,6 @@ class Game {
         
         document.getElementById('mobilePauseButton').addEventListener('click', () => {
             this.togglePause();
-        });
-        
-        // Add event listeners to weapon buttons
-        this.touchControls.weaponButtons.forEach((button, index) => {
-            document.getElementById(`mobileWeaponButton${index}`).addEventListener('click', () => {
-                this.switchWeapon(index);
-            });
         });
         
         // Add event listeners to item buttons
@@ -451,14 +427,14 @@ class Game {
             return;
         }
         
-        // Check if touch is on shoot button
-        const shootDist = Math.sqrt(
-            Math.pow(touchX - this.touchControls.shootButton.x, 2) +
-            Math.pow(touchY - this.touchControls.shootButton.y, 2)
+        // Check if touch is on fire button
+        const fireDist = Math.sqrt(
+            Math.pow(touchX - this.touchControls.fireButton.x, 2) +
+            Math.pow(touchY - this.touchControls.fireButton.y, 2)
         );
         
-        if (shootDist <= this.touchControls.shootButton.radius) {
-            this.touchControls.shootButton.active = true;
+        if (fireDist <= this.touchControls.fireButton.radius) {
+            this.touchControls.fireButton.active = true;
             return;
         }
         
@@ -472,20 +448,6 @@ class Game {
             this.touchControls.buildButton.active = true;
             return;
         }
-        
-        // Check if touch is on weapon buttons
-        this.touchControls.weaponButtons.forEach((button, index) => {
-            const weaponDist = Math.sqrt(
-                Math.pow(touchX - button.x, 2) +
-                Math.pow(touchY - button.y, 2)
-            );
-            
-            if (weaponDist <= button.radius) {
-                button.active = true;
-                this.switchWeapon(index);
-                return;
-            }
-        });
         
         // Check if touch is on item buttons
         this.touchControls.itemButtons.forEach((button, index) => {
@@ -504,6 +466,16 @@ class Game {
                 return;
             }
         });
+        
+        // If touch is not on any control, switch weapon
+        // Divide the screen into 3 vertical sections for weapon switching
+        const sectionWidth = this.width / 3;
+        const section = Math.floor(touchX / sectionWidth);
+        
+        // Switch to the corresponding weapon (0 is pickaxe, 1-2 are other weapons)
+        if (section >= 0 && section < 3) {
+            this.switchWeapon(section);
+        }
     }
     
     handleTouchMove(e) {
@@ -537,8 +509,8 @@ class Game {
             this.player.y += normalizedDy * this.player.speed;
         }
         
-        // Auto-fire when shoot button is active
-        if (this.touchControls.shootButton.active && this.player.currentWeapon !== 0 && !this.gamePaused && !this.gameOver && !this.buildMode) {
+        // Auto-fire when fire button is active
+        if (this.touchControls.fireButton.active && this.player.currentWeapon !== 0 && !this.gamePaused && !this.gameOver && !this.buildMode) {
             this.shoot();
         }
     }
@@ -547,16 +519,11 @@ class Game {
         // Reset joystick
         this.touchControls.joystick.active = false;
         
-        // Reset shoot button
-        this.touchControls.shootButton.active = false;
+        // Reset fire button
+        this.touchControls.fireButton.active = false;
         
         // Reset build button
         this.touchControls.buildButton.active = false;
-        
-        // Reset weapon buttons
-        this.touchControls.weaponButtons.forEach(button => {
-            button.active = false;
-        });
         
         // Reset item buttons
         this.touchControls.itemButtons.forEach(button => {
@@ -697,10 +664,11 @@ class Game {
         
         bot.ammo[ammoType]--;
         
-        // Calculate angle to player
+        // Calculate angle to target
+        const target = bot.target;
         const angle = Math.atan2(
-            this.player.y - bot.y,
-            this.player.x - bot.x
+            target.y - bot.y,
+            target.x - bot.x
         );
         
         // Add some spread based on weapon type
@@ -720,7 +688,8 @@ class Game {
             damage: weapon.damage,
             range: weapon.range,
             distanceTraveled: 0,
-            owner: 'bot'
+            owner: 'bot',
+            ownerName: bot.name
         };
         
         this.bullets.push(bullet);
@@ -737,7 +706,8 @@ class Game {
                     damage: weapon.damage / 2,
                     range: weapon.range,
                     distanceTraveled: 0,
-                    owner: 'bot'
+                    owner: 'bot',
+                    ownerName: bot.name
                 });
             }
         }
@@ -763,65 +733,95 @@ class Game {
         this.bots.forEach(bot => {
             if (!bot.isAlive) return;
             
-            // Update bot state
-            const distToPlayer = this.distance(bot, this.player);
+            // Check for other bots in range to attack
+            const botsInRange = this.bots.filter(otherBot => 
+                otherBot !== bot && 
+                otherBot.isAlive && 
+                this.distance(bot, otherBot) < 300
+            );
             
-            // Update build timer
-            bot.buildTimer += deltaTime;
+            // Check for player in range
+            const playerInRange = this.player.isAlive && this.distance(bot, this.player) < 300;
             
-            // Bot AI logic
-            if (distToPlayer < 300) {
-                // Player is in range, chase and attack
+            // Prioritize attacking player if in range, otherwise attack other bots
+            if (playerInRange) {
                 bot.state = 'chase';
-                
-                // Move towards player
+                bot.target = this.player;
+            } else if (botsInRange.length > 0) {
+                bot.state = 'chase';
+                bot.target = botsInRange[0]; // Attack the first bot in range
+            }
+            
+            // Update bot state
+            if (bot.state === 'chase') {
+                // Move towards target
+                const target = bot.target;
                 const angle = Math.atan2(
-                    this.player.y - bot.y,
-                    this.player.x - bot.x
+                    target.y - bot.y,
+                    target.x - bot.x
                 );
                 
-                bot.x += Math.cos(angle) * bot.speed;
-                bot.y += Math.sin(angle) * bot.speed;
+                // Add some randomness to movement
+                const randomAngle = angle + (Math.random() - 0.5) * 0.2;
+                const randomSpeed = bot.speed * (0.8 + Math.random() * 0.4);
                 
-                // Shoot at player if in range
-                if (distToPlayer < 200) {
+                bot.x += Math.cos(randomAngle) * randomSpeed;
+                bot.y += Math.sin(randomAngle) * randomSpeed;
+                
+                // Check if in range to attack
+                if (this.distance(bot, target) < 200) {
+                    // Shoot at target
                     this.botShoot(bot);
                 }
+            } else if (bot.state === 'gather') {
+                // Check for trees and rocks to gather materials
+                const treesInRange = this.trees.filter(tree => 
+                    this.distance(bot, tree) < 50
+                );
                 
-                // Use items if health or shield is low
-                if (bot.health < 50 && bot.items.medkit > 0) {
-                    bot.items.medkit--;
-                    bot.health = Math.min(100, bot.health + 50);
-                    this.showNotification(`${bot.name} used a medkit!`);
+                const rocksInRange = this.rocks.filter(rock => 
+                    this.distance(bot, rock) < 50
+                );
+                
+                if (treesInRange.length > 0 || rocksInRange.length > 0) {
+                    // Gather materials
+                    if (treesInRange.length > 0) {
+                        const tree = treesInRange[0];
+                        tree.health -= 20;
+                        if (tree.health <= 0) {
+                            bot.materials.wood += 10;
+                            this.trees = this.trees.filter(t => t !== tree);
+                        }
+                    }
+                    
+                    if (rocksInRange.length > 0) {
+                        const rock = rocksInRange[0];
+                        rock.health -= 20;
+                        if (rock.health <= 0) {
+                            bot.materials.stone += 10;
+                            this.rocks = this.rocks.filter(r => r !== rock);
+                        }
+                    }
+                } else {
+                    // No more resources in range, go back to patrol
+                    bot.state = 'patrol';
+                    bot.patrolPoint = {
+                        x: Math.random() * 4000 - 2000,
+                        y: Math.random() * 4000 - 2000
+                    };
+                    bot.patrolTimer = 0;
+                    bot.patrolDuration = 3000 + Math.random() * 5000;
                 }
-                
-                if (bot.shield < 30 && bot.items.shieldPotion > 0) {
-                    bot.items.shieldPotion--;
-                    bot.shield = Math.min(100, bot.shield + 50);
-                    this.showNotification(`${bot.name} used a shield potion!`);
-                }
-            } else if (bot.state === 'chase') {
-                // Lost player, go back to patrol
-                bot.state = 'patrol';
-                bot.patrolPoint = {
-                    x: Math.random() * 2000 - 1000,
-                    y: Math.random() * 2000 - 1000
-                };
-                bot.patrolTimer = 0;
-                bot.patrolDuration = 3000 + Math.random() * 5000;
-            } else if (bot.buildTimer >= bot.buildCooldown) {
-                // Time to build something
-                bot.state = 'build';
-                
-                // Try to build
+            } else if (bot.state === 'build') {
+                // Try to build something
                 this.botBuild(bot);
                 
                 // If couldn't build, go back to patrol
                 if (bot.state === 'build') {
                     bot.state = 'patrol';
                     bot.patrolPoint = {
-                        x: Math.random() * 2000 - 1000,
-                        y: Math.random() * 2000 - 1000
+                        x: Math.random() * 4000 - 2000,
+                        y: Math.random() * 4000 - 2000
                     };
                     bot.patrolTimer = 0;
                     bot.patrolDuration = 3000 + Math.random() * 5000;
@@ -833,8 +833,8 @@ class Game {
                 if (bot.patrolTimer >= bot.patrolDuration) {
                     // Time to change patrol point
                     bot.patrolPoint = {
-                        x: Math.random() * 2000 - 1000,
-                        y: Math.random() * 2000 - 1000
+                        x: Math.random() * 4000 - 2000,
+                        y: Math.random() * 4000 - 2000
                     };
                     bot.patrolTimer = 0;
                     bot.patrolDuration = 3000 + Math.random() * 5000;
@@ -856,8 +856,8 @@ class Game {
                 // Occasionally change direction completely
                 if (Math.random() < 0.01) {
                     bot.patrolPoint = {
-                        x: Math.random() * 2000 - 1000,
-                        y: Math.random() * 2000 - 1000
+                        x: Math.random() * 4000 - 2000,
+                        y: Math.random() * 4000 - 2000
                     };
                 }
                 
@@ -893,6 +893,17 @@ class Game {
                     }
                 }
             }
+            
+            // Use items if health or shield is low
+            if (bot.health < 50 && bot.items.medkit > 0) {
+                bot.items.medkit--;
+                bot.health = Math.min(100, bot.health + 50);
+            }
+            
+            if (bot.shield < 30 && bot.items.shieldPotion > 0) {
+                bot.items.shieldPotion--;
+                bot.shield = Math.min(100, bot.shield + 50);
+            }
         });
     }
 
@@ -927,7 +938,7 @@ class Game {
             }
             
             // Check if bullet is out of bounds
-            if (bullet.x < -1000 || bullet.x > 3000 || bullet.y < -1000 || bullet.y > 3000) {
+            if (bullet.x < -2000 || bullet.x > 2000 || bullet.y < -2000 || bullet.y > 2000) {
                 return false;
             }
             
@@ -959,7 +970,7 @@ class Game {
                 }
             }
             
-            // Check for collisions with bots (if player bullet)
+            // Check for collisions with bots (if player bullet or bot bullet)
             if (bullet.owner === 'player') {
                 for (let i = 0; i < this.bots.length; i++) {
                     const bot = this.bots[i];
@@ -995,11 +1006,9 @@ class Game {
                         return false;
                     }
                 }
-            }
-            
-            // Check for collision with player (if bot bullet)
-            if (bullet.owner === 'bot') {
-                if (this.checkCollision(bullet, this.player)) {
+            } else if (bullet.owner === 'bot') {
+                // Check for collision with player
+                if (this.player.isAlive && this.checkCollision(bullet, this.player)) {
                     // Apply damage to player
                     if (this.player.shield > 0) {
                         this.player.shield -= bullet.damage;
@@ -1019,6 +1028,45 @@ class Game {
                     }
                     
                     return false;
+                }
+                
+                // Check for collision with other bots
+                for (let i = 0; i < this.bots.length; i++) {
+                    const bot = this.bots[i];
+                    if (!bot.isAlive || bot.name === bullet.ownerName) continue;
+                    
+                    if (this.checkCollision(bullet, bot)) {
+                        // Apply damage to bot
+                        if (bot.shield > 0) {
+                            bot.shield -= bullet.damage;
+                            if (bot.shield < 0) {
+                                bot.health += bot.shield;
+                                bot.shield = 0;
+                            }
+                        } else {
+                            bot.health -= bullet.damage;
+                        }
+                        
+                        // Check if bot is dead
+                        if (bot.health <= 0) {
+                            bot.isAlive = false;
+                            
+                            // Find the bot that killed this bot
+                            const killerBot = this.bots.find(b => b.name === bullet.ownerName);
+                            if (killerBot) {
+                                // Increment kill count for the killer bot
+                                killerBot.kills = (killerBot.kills || 0) + 1;
+                            }
+                            
+                            // Check if all bots are dead
+                            const aliveBots = this.bots.filter(b => b.isAlive).length;
+                            if (aliveBots === 0 && this.player.isAlive) {
+                                this.showGameOver(true);
+                            }
+                        }
+                        
+                        return false;
+                    }
                 }
             }
             
@@ -1298,7 +1346,8 @@ class Game {
     }
 
     drawMinimap() {
-        if (!this.minimapVisible) return;
+        // Don't draw minimap on mobile
+        if (!this.minimapVisible || this.isMobile) return;
         
         const minimapSize = 150;
         const minimapX = this.width - minimapSize - 20;
@@ -1317,8 +1366,8 @@ class Game {
         // Draw player on minimap
         this.ctx.fillStyle = '#00ff00';
         this.ctx.fillRect(
-            minimapX + (this.player.x + 1000) * minimapScale,
-            minimapY + (this.player.y + 1000) * minimapScale,
+            minimapX + (this.player.x + 2000) * minimapScale,
+            minimapY + (this.player.y + 2000) * minimapScale,
             5,
             5
         );
@@ -1329,8 +1378,8 @@ class Game {
             if (!bot.isAlive) return;
             
             this.ctx.fillRect(
-                minimapX + (bot.x + 1000) * minimapScale,
-                minimapY + (bot.y + 1000) * minimapScale,
+                minimapX + (bot.x + 2000) * minimapScale,
+                minimapY + (bot.y + 2000) * minimapScale,
                 5,
                 5
             );
@@ -1347,8 +1396,8 @@ class Game {
             }
             
             this.ctx.fillRect(
-                minimapX + (building.x + 1000) * minimapScale,
-                minimapY + (building.y + 1000) * minimapScale,
+                minimapX + (building.x + 2000) * minimapScale,
+                minimapY + (building.y + 2000) * minimapScale,
                 3,
                 3
             );
@@ -1364,25 +1413,27 @@ class Game {
             10
         );
         
-        // Draw player count
+        // Draw combined player count
         const aliveBots = this.bots.filter(b => b.isAlive).length;
+        const totalPlayers = (this.player.isAlive ? 1 : 0) + aliveBots;
         this.ctx.fillStyle = '#ffffff';
         this.ctx.font = '12px Arial';
         this.ctx.textAlign = 'left';
         this.ctx.fillText(
-            `Players: ${this.player.isAlive ? 1 : 0}`,
+            `Players: ${totalPlayers}`,
             minimapX,
             minimapY + minimapSize + 20
-        );
-        this.ctx.fillText(
-            `Bots: ${aliveBots}`,
-            minimapX,
-            minimapY + minimapSize + 40
         );
     }
 
     drawMobileControls() {
         if (!this.isMobile) return;
+        
+        // Calculate responsive sizes based on screen dimensions
+        const screenSize = Math.min(this.width, this.height);
+        const joystickRadius = screenSize * 0.12; // 12% of screen size
+        const buttonRadius = screenSize * 0.08; // 8% of screen size
+        const itemButtonRadius = screenSize * 0.06; // 6% of screen size
         
         // Draw joystick
         this.ctx.beginPath();
@@ -1402,7 +1453,7 @@ class Game {
             this.ctx.arc(
                 this.touchControls.joystick.x,
                 this.touchControls.joystick.y,
-                20,
+                joystickRadius * 0.4,
                 0,
                 Math.PI * 2
             );
@@ -1410,16 +1461,16 @@ class Game {
             this.ctx.fill();
         }
         
-        // Draw shoot button
+        // Draw fire button
         this.ctx.beginPath();
         this.ctx.arc(
-            this.touchControls.shootButton.x,
-            this.touchControls.shootButton.y,
-            this.touchControls.shootButton.radius,
+            this.touchControls.fireButton.x,
+            this.touchControls.fireButton.y,
+            this.touchControls.fireButton.radius,
             0,
             Math.PI * 2
         );
-        this.ctx.fillStyle = this.touchControls.shootButton.active ? 'rgba(255, 0, 0, 0.7)' : 'rgba(255, 0, 0, 0.5)';
+        this.ctx.fillStyle = this.touchControls.fireButton.active ? 'rgba(255, 0, 0, 0.7)' : 'rgba(255, 0, 0, 0.5)';
         this.ctx.fill();
         
         // Draw build button
@@ -1433,27 +1484,6 @@ class Game {
         );
         this.ctx.fillStyle = this.touchControls.buildButton.active ? 'rgba(0, 255, 0, 0.7)' : 'rgba(0, 255, 0, 0.5)';
         this.ctx.fill();
-        
-        // Draw weapon buttons
-        this.touchControls.weaponButtons.forEach((button, index) => {
-            this.ctx.beginPath();
-            this.ctx.arc(
-                button.x,
-                button.y,
-                button.radius,
-                0,
-                Math.PI * 2
-            );
-            this.ctx.fillStyle = button.active ? 'rgba(255, 255, 0, 0.7)' : 'rgba(255, 255, 0, 0.5)';
-            this.ctx.fill();
-            
-            // Draw weapon number
-            this.ctx.fillStyle = 'white';
-            this.ctx.font = '16px Arial';
-            this.ctx.textAlign = 'center';
-            this.ctx.textBaseline = 'middle';
-            this.ctx.fillText(index + 1, button.x, button.y);
-        });
         
         // Draw item buttons
         this.touchControls.itemButtons.forEach((button, index) => {
@@ -1470,11 +1500,31 @@ class Game {
             
             // Draw item icon
             this.ctx.fillStyle = 'white';
-            this.ctx.font = '16px Arial';
+            this.ctx.font = `${Math.floor(screenSize * 0.04)}px Arial`;
             this.ctx.textAlign = 'center';
             this.ctx.textBaseline = 'middle';
             this.ctx.fillText(button.type === 'medkit' ? 'F' : 'G', button.x, button.y);
         });
+        
+        // Draw weapon indicator at the top of the screen
+        const weaponNames = ['Pickaxe', 'Pistol', 'Shotgun', 'Rifle'];
+        const currentWeapon = this.player.weapons[this.player.currentWeapon];
+        const weaponName = currentWeapon.type === 'empty' ? 'Empty' : 
+                          currentWeapon.type.charAt(0).toUpperCase() + currentWeapon.type.slice(1);
+        
+        this.ctx.fillStyle = 'rgba(0, 0, 0, 0.5)';
+        this.ctx.fillRect(0, 0, this.width, 40);
+        
+        this.ctx.fillStyle = '#ffffff';
+        this.ctx.font = `${Math.floor(screenSize * 0.04)}px Arial`;
+        this.ctx.textAlign = 'center';
+        this.ctx.fillText(`Weapon: ${weaponName}`, this.width / 2, 25);
+        
+        // Draw weapon ammo if applicable
+        if (currentWeapon.type !== 'pickaxe' && currentWeapon.type !== 'empty') {
+            const ammo = this.player.ammo[currentWeapon.type] || 0;
+            this.ctx.fillText(`Ammo: ${ammo}`, this.width / 2, 50);
+        }
     }
 
     gameLoop(timestamp) {
@@ -1730,9 +1780,9 @@ class Game {
         this.buildMode = !this.buildMode;
         
         if (this.buildMode) {
-            this.showNotification("Build mode activated. Press W for wall, E for tower, R for base.");
+            // No notification for build mode activation
         } else {
-            this.showNotification("Build mode deactivated.");
+            // No notification for build mode deactivation
         }
     }
     
@@ -1740,135 +1790,93 @@ class Game {
         if (!this.buildMode) return;
         
         this.selectedBuildingType = type;
-        this.showNotification(`Selected building type: ${type}`);
+        // No notification for building type selection
     }
     
     build() {
         if (!this.buildMode) return;
         
         // Check if player has enough materials
-        const buildingCosts = {
-            wall: { wood: 10, stone: 5 },
-            tower: { wood: 20, stone: 15 },
-            base: { wood: 50, stone: 30 }
+        const requiredMaterials = {
+            'wall': { wood: 20, stone: 0 },
+            'tower': { wood: 30, stone: 20 },
+            'base': { wood: 50, stone: 50 }
         };
         
-        const cost = buildingCosts[this.selectedBuildingType];
+        const materials = requiredMaterials[this.selectedBuildingType];
         
-        if (this.player.materials.wood < cost.wood || this.player.materials.stone < cost.stone) {
-            this.showNotification(`Not enough materials! Need ${cost.wood} wood and ${cost.stone} stone.`);
+        if (this.player.materials.wood < materials.wood || this.player.materials.stone < materials.stone) {
+            // No notification for insufficient materials
             return;
         }
         
-        // Calculate building position (snap to grid)
-        const gridSize = 40;
-        const buildingX = Math.floor((this.mouse.x - this.width/2 + this.player.x) / gridSize) * gridSize;
-        const buildingY = Math.floor((this.mouse.y - this.height/2 + this.player.y) / gridSize) * gridSize;
-        
-        // Check if there's already a building at this position
-        const buildingExists = this.buildings.some(building => 
-            building.x === buildingX && building.y === buildingY
-        );
-        
-        if (buildingExists) {
-            this.showNotification("Cannot build here - building already exists!");
-            return;
-        }
+        // Deduct materials
+        this.player.materials.wood -= materials.wood;
+        this.player.materials.stone -= materials.stone;
         
         // Create building
         const building = {
-            x: buildingX,
-            y: buildingY,
+            x: this.player.x,
+            y: this.player.y,
+            width: this.selectedBuildingType === 'wall' ? 100 : this.selectedBuildingType === 'tower' ? 60 : 200,
+            height: this.selectedBuildingType === 'wall' ? 20 : this.selectedBuildingType === 'tower' ? 100 : 100,
+            health: this.selectedBuildingType === 'wall' ? 100 : this.selectedBuildingType === 'tower' ? 200 : 500,
             type: this.selectedBuildingType,
-            health: this.selectedBuildingType === 'wall' ? 100 : 
-                    this.selectedBuildingType === 'tower' ? 200 : 500,
-            owner: 'player',
-            width: this.selectedBuildingType === 'wall' ? 40 : 
-                   this.selectedBuildingType === 'tower' ? 60 : 100,
-            height: this.selectedBuildingType === 'wall' ? 40 : 
-                    this.selectedBuildingType === 'tower' ? 80 : 100
+            owner: 'player'
         };
         
-        // Add building to list
         this.buildings.push(building);
         
-        // Deduct materials
-        this.player.materials.wood -= cost.wood;
-        this.player.materials.stone -= cost.stone;
-        
-        // Show notification
-        this.showNotification(`Built a ${this.selectedBuildingType}!`);
+        // No notification for building placement
     }
     
     botBuild(bot) {
         // Check if bot has enough materials
-        const buildingCosts = {
-            wall: { wood: 10, stone: 5 },
-            tower: { wood: 20, stone: 15 },
-            base: { wood: 50, stone: 30 }
+        const buildingTypes = ['wall', 'tower', 'base'];
+        const selectedType = buildingTypes[Math.floor(Math.random() * buildingTypes.length)];
+        
+        const requiredMaterials = {
+            'wall': { wood: 20, stone: 0 },
+            'tower': { wood: 30, stone: 20 },
+            'base': { wood: 50, stone: 50 }
         };
         
-        // Choose a random building type
-        const buildingTypes = ['wall', 'tower', 'base'];
-        const buildingType = buildingTypes[Math.floor(Math.random() * buildingTypes.length)];
-        const cost = buildingCosts[buildingType];
+        const materials = requiredMaterials[selectedType];
         
-        if (bot.materials.wood < cost.wood || bot.materials.stone < cost.stone) {
+        if (bot.materials.wood < materials.wood || bot.materials.stone < materials.stone) {
+            // Bot can't build, go back to patrol
+            bot.state = 'patrol';
             return;
         }
         
-        // Find a suitable location near the bot
-        const gridSize = 40;
-        const searchRadius = 200;
+        // Deduct materials
+        bot.materials.wood -= materials.wood;
+        bot.materials.stone -= materials.stone;
         
-        for (let i = 0; i < 10; i++) {
-            const offsetX = (Math.random() - 0.5) * searchRadius;
-            const offsetY = (Math.random() - 0.5) * searchRadius;
-            
-            const buildingX = Math.floor((bot.x + offsetX) / gridSize) * gridSize;
-            const buildingY = Math.floor((bot.y + offsetY) / gridSize) * gridSize;
-            
-            // Check if there's already a building at this position
-            const buildingExists = this.buildings.some(building => 
-                building.x === buildingX && building.y === buildingY
-            );
-            
-            if (!buildingExists) {
-                // Create building
-                const building = {
-                    x: buildingX,
-                    y: buildingY,
-                    type: buildingType,
-                    health: buildingType === 'wall' ? 100 : 
-                            buildingType === 'tower' ? 200 : 500,
-                    owner: 'bot',
-                    ownerName: bot.name,
-                    width: buildingType === 'wall' ? 40 : 
-                           buildingType === 'tower' ? 60 : 100,
-                    height: buildingType === 'wall' ? 40 : 
-                            buildingType === 'tower' ? 80 : 100
-                };
-                
-                // Add building to list
-                this.buildings.push(building);
-                
-                // Deduct materials
-                bot.materials.wood -= cost.wood;
-                bot.materials.stone -= cost.stone;
-                
-                // Show notification
-                this.showNotification(`${bot.name} built a ${buildingType}!`);
-                
-                // Reset build timer
-                bot.buildTimer = 0;
-                bot.buildCooldown = 5000 + Math.random() * 10000;
-                
-                return;
-            }
-        }
+        // Create building
+        const building = {
+            x: bot.x,
+            y: bot.y,
+            width: selectedType === 'wall' ? 100 : selectedType === 'tower' ? 60 : 200,
+            height: selectedType === 'wall' ? 20 : selectedType === 'tower' ? 100 : 100,
+            health: selectedType === 'wall' ? 100 : selectedType === 'tower' ? 200 : 500,
+            type: selectedType,
+            owner: 'bot',
+            ownerName: bot.name
+        };
+        
+        this.buildings.push(building);
+        
+        // Reset build timer
+        bot.buildTimer = 0;
+        
+        // No notification for bot building
     }
     
     toggleMinimap() {
+        // Don't allow minimap toggle on mobile
+        if (this.isMobile) return;
+        
         this.minimapVisible = !this.minimapVisible;
         this.showNotification(this.minimapVisible ? "Minimap shown" : "Minimap hidden");
     }
